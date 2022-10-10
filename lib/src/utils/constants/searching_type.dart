@@ -1,0 +1,1 @@
+enum SearchingType { OFFER, DEMAND }
