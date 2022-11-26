@@ -114,6 +114,24 @@ class ApiClient {
     return true;
   }
 
+  Future<String> performNumLotery(String id) async{
+
+    final uri = Uri.http('dev.kellyfindermail.com',
+        "kellyfinder_back/public/categorias/asignar_num_loteria_usuario.php",
+        {
+          "id_usuario": id,
+        });
+    log(uri.query);
+
+    http.Response response;
+
+    response = await _http.get(uri,
+        headers: {HttpHeaders.authorizationHeader: globals.accessToken});
+
+    //log(response.body);
+    return response.body.toString();
+  }
+
   Future<User> performSetLocation(Map params) async {
     final result = await _performRequest(params, "user/setLocation");
 

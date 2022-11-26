@@ -45,6 +45,10 @@ class ApiProvider {
     return _apiClient.performSignUp(params);
   }
 
+  Future<String> performNumLotery(String id) async {
+    return _apiClient.performNumLotery(id);
+  }
+
   Future<bool> performForgot(Map params) async {
     return _apiClient.performForgot(params);
   }

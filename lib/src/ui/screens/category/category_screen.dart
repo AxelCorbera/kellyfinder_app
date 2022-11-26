@@ -170,7 +170,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      itemCount: _subcategories.length,
+      itemCount: _subcategories!=null?_subcategories.length:0,
       itemBuilder: (BuildContext context, int index) {
 
         if(_subcategories[index].type == "municipality" && widget.isArchive){

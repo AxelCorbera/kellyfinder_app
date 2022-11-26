@@ -33,6 +33,8 @@ class Preferences {
 
   static void removeSharedUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    final comRead = prefs.getString('communiques');
     prefs.clear();
+    await prefs.setString('communiques',comRead);
   }
 }

@@ -292,12 +292,12 @@ class _SearchMunicipalityScreenState extends State<SearchMunicipalityScreen> {
         "lat": _position.latitude,
         "lng": _position.longitude,
         "name": query.trim(),
-        //"is_registered": widget.registeredOnly ? 1 : 0
+        "is_registered": 0 //widget.registeredOnly ? 1 : 0
       };
 
-      if (widget.registeredOnly) {
-        params.putIfAbsent("is_registered", () => widget.registeredOnly);
-      }
+      // if (widget.registeredOnly) {
+      //   params.putIfAbsent("is_registered", () => widget.registeredOnly);
+      // }
 
       List<Municipality> _results =
           await ApiProvider().getMunicipalitiesByDistance(params);

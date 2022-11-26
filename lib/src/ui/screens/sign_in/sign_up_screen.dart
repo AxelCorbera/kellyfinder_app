@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:app/src/api/api_provider.dart';
 import 'package:app/src/config/app_localizations.dart';
 import 'package:app/src/config/sentence_case_text_formatter.dart';
 import 'package:app/src/config/sentence_words_text_formatter.dart';
 import 'package:app/src/model/user.dart';
 import 'package:app/src/provider/user_notifier.dart';
+import 'package:app/src/smtp_server/mailer.dart';
 import 'package:app/src/ui/screens/sign_in/add_location_screen.dart';
 import 'package:app/src/ui/widgets/button/custom_future_button.dart';
 import 'package:app/src/ui/widgets/image/custom_logo.dart';
@@ -304,6 +308,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
             "lottery_friend_code": _raffleController.text
           });
 
+          final response =
+          await ApiProvider().performNumLotery(appUser.user.id.toString());
+          log(response);
+          var json = jsonDecode(response);
+          log(json['num_loteria']);
+          String code = json['num_loteria'];
+          await sendEmailTest(code,_emailController.text);
+
           await Provider.of<UserNotifier>(context, listen: false)
               .initUser(appUser);
 
@@ -324,6 +336,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
     }
+  }
+
+  Future<void> sendEmailTest(String code, String email) async {
+    await Mailer(code, email);
   }
 
   Future _checkRaffle() async {

@@ -20,6 +20,7 @@ import 'package:app/src/utils/alerts/catch_errors.dart';
 import 'package:app/src/utils/api/api_google_autocomplete.dart';
 import 'package:app/src/utils/methods/conversions.dart';
 import 'package:app/src/utils/methods/launch_location.dart';
+import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:app/src/utils/methods/navigation_performer.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:app/src/config/string_casing_extension.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class MunicipalityDetailsScreen extends StatefulWidget {
   final Municipality municipality;
@@ -54,6 +56,11 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
 
   geo.Position _position;
 
+  bool showAllDescription = false;
+  bool showAllVisits = false;
+  bool showAllEvents = false;
+  ScrollController controller;
+
   @override
   void initState() {
     _futurePics = getPics();
@@ -61,7 +68,7 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
     _futureCategories = getCategories();
     _futureCategories = getCompanies();
     _futureEvents = getEvents();
-
+    controller = ScrollController();
     super.initState();
   }
 
@@ -253,12 +260,33 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
               }),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: Text(
-              AppLocalizations.of(context).translate("interestSites"),
-              style: Theme.of(context).textTheme.subtitle1.copyWith(
-                    //color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w700,
-                  ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  AppLocalizations.of(context).translate("interestSites"),
+                  style: Theme.of(context).textTheme.subtitle1.copyWith(
+                        //color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (_visits != null && _visits.length > 4 && !showAllVisits)
+                  FlatButton(
+                    padding: EdgeInsets.all(0),
+                    onPressed: () {
+                      setState(() {
+                        showAllVisits = true;
+                      });
+                    },
+                    child: Text(
+                      AppLocalizations.of(context).translate("seeMore"),
+                      style: Theme.of(context).textTheme.subtitle1.copyWith(
+                            color: AppStyles.lightGreyColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  )
+              ],
             ),
           ),
           FutureBuilder(
@@ -279,60 +307,66 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
                         ),
                       );
                     return ListView.separated(
-                      itemCount: _visits.length,
+                      itemCount: _visits.length > 4
+                          ? showAllVisits
+                              ? _visits.length
+                              : 4
+                          : _visits.length,
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
                       itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          dense: true,
-                          onTap: () {
-                            if (_visits[index].lat != null &&
-                                _visits[index].lng != null) {
-                              MapDirectionsApi().openMap(
-                                  _visits[index].lat, _visits[index].lng);
-                            }
-                          },
-                          title: Text(
-                          _visits[index].name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .subtitle1
-                                .copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Opacity(
-                            opacity: _visits[index].lat == null ? 0.6 : 1,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Row(
-                                children: <Widget>[
-                                  Icon(
-                                    Icons.location_on,
-                                    color:
-                                        AppStyles.bgMunicipalityDetailsAppBar,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      _visits[index].lat == null
-                                          ? AppLocalizations.of(context).translate(
-                                              "municipality_detail_visit_no_location")
-                                          : _visits[index].address,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2
-                                          .copyWith(
-                                              color: AppStyles
-                                                  .lightGreyColor /*AppStyles.lightGreyColor*/,
-                                              fontWeight: FontWeight.w700),
+                        if (index < 4 || showAllVisits)
+                          return ListTile(
+                            dense: true,
+                            onTap: () {
+                              if (_visits[index].lat != null &&
+                                  _visits[index].lng != null) {
+                                MapDirectionsApi().openMap(
+                                    _visits[index].lat, _visits[index].lng);
+                              }
+                            },
+                            title: Text(
+                              _visits[index].name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .subtitle1
+                                  .copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500),
+                            ),
+                            subtitle: Opacity(
+                              opacity: _visits[index].lat == null ? 0.6 : 1,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Row(
+                                  children: <Widget>[
+                                    Icon(
+                                      Icons.location_on,
+                                      color:
+                                          AppStyles.bgMunicipalityDetailsAppBar,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        _visits[index].lat == null
+                                            ? AppLocalizations.of(context)
+                                                .translate(
+                                                    "municipality_detail_visit_no_location")
+                                            : _visits[index].address,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2
+                                            .copyWith(
+                                                color: AppStyles
+                                                    .lightGreyColor /*AppStyles.lightGreyColor*/,
+                                                fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
+                          );
                       },
                       separatorBuilder: (BuildContext context, int index) {
                         return Divider(height: 1);
@@ -344,11 +378,11 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
                 return FutureCircularIndicator();
               }),
           SizedBox(height: 16),
-          _services.isNotEmpty?
-              Column(
-                children: _buildServiceItems(),
-              ):
-          FutureCircularIndicator(),
+          _services.isNotEmpty
+              ? Column(
+                  children: _buildServiceItems(),
+                )
+              : FutureCircularIndicator(),
           // FutureBuilder(
           //   future: _futureCategories,
           //     builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
@@ -363,12 +397,33 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
           // }),
           ListTile(
             dense: true,
-            title: Text(
-              AppLocalizations.of(context).translate("festive"),
-              style: Theme.of(context).textTheme.subtitle1.copyWith(
-                    //color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w700,
-                  ),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  AppLocalizations.of(context).translate("festive"),
+                  style: Theme.of(context).textTheme.subtitle1.copyWith(
+                        //color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (_events != null && _events.length > 3 && !showAllEvents)
+                  FlatButton(
+                    padding: EdgeInsets.all(0),
+                    onPressed: () {
+                      setState(() {
+                        showAllEvents = true;
+                      });
+                    },
+                    child: Text(
+                      AppLocalizations.of(context).translate("seeMore"),
+                      style: Theme.of(context).textTheme.subtitle1.copyWith(
+                            color: AppStyles.lightGreyColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  )
+              ],
             ),
           ),
           FutureBuilder(
@@ -389,74 +444,85 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
                         ),
                       );
                     return ListView.separated(
-                      itemCount: _events.length,
+                      itemCount: _events.length > 3
+                          ? showAllEvents
+                              ? _events.length
+                              : 3
+                          : _events.length,
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
                       itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          dense: true,
-                          title: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                formatStringDate(_events[index].date),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2
-                                    .copyWith(
-                                      color: AppStyles.lightGreyColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                              ),
-                              Expanded(
-                                child: Text(
-                              _events[index].name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyText1
-                                      .copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700),
-                                  textAlign: TextAlign.end,
+                        if (index < 3 || showAllEvents)
+                          return ListTile(
+                            dense: true,
+                            title: Row(
+                              mainAxisSize: MainAxisSize.max,
+                              //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width / 3.2,
+                                  child: Text(
+                                    formatStringDate(_events[index].date),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyText2
+                                        .copyWith(
+                                          color: AppStyles.lightGreyColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          subtitle: _events[index].link != ""
-                              ? Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: <Widget>[
-                                      /*Icon(Icons.language),
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6,
+                                  child: Text(
+                                    _events[index].name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyText1
+                                        .copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: _events[index].link != ""
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: <Widget>[
+                                        /*Icon(Icons.language),
                                 SizedBox(width: 4.0,),*/
-                                      GestureDetector(
-                                        onTap: () {
-                                          launchWeb(_events[index].link);
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8.0),
-                                          child: Text(
-                                            AppLocalizations.of(context)
-                                                .translate("knowMore"),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2
-                                                .copyWith(
-                                                  //color: Theme.of(context).primaryColor,
-                                                  decoration:
-                                                      TextDecoration.underline,
-                                                ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            launchWeb(_events[index].link);
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8.0),
+                                            child: Text(
+                                              AppLocalizations.of(context)
+                                                  .translate("knowMore"),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                    //color: Theme.of(context).primaryColor,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : Container(),
-                        );
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
+                          );
                       },
                       separatorBuilder: (BuildContext context, int index) {
                         return Divider(height: 1);
@@ -464,7 +530,6 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
                     );
                   }
                 }
-
                 return FutureCircularIndicator();
               }),
           SizedBox(height: 16)
@@ -477,7 +542,6 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
     try {
       images =
           await ApiProvider().getMunicipalityPics({}, widget.municipality.id);
-
       return true;
     } catch (e) {
       catchErrors(e, _scaffoldKey);
@@ -499,8 +563,7 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
     try {
       _services = await ApiProvider().getMunicipalityServices({});
       await getCompanies();
-      setState(() {
-      });
+      setState(() {});
       return true;
     } catch (e) {
       catchErrors(e, _scaffoldKey);
@@ -515,7 +578,7 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-            service.name,
+              service.name,
               style: Theme.of(context).textTheme.subtitle1.copyWith(
                     //color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.w700,
@@ -560,26 +623,24 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(4)),
                               ),
-                              child: Image.network(service.categories[index].image),
+                              child: Image.network(
+                                  service.categories[index].image),
                             ),
                             Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue,
-                                        Colors.lightBlueAccent
-                                      ],
-                                    begin: Alignment.bottomLeft,
-                                    end: Alignment.topRight
-                                  )
-                                ),
-                              )
-                            ),
+                                padding: const EdgeInsets.all(4.0),
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      gradient: LinearGradient(
+                                          colors: [
+                                            Colors.blue,
+                                            Colors.lightBlueAccent
+                                          ],
+                                          begin: Alignment.bottomLeft,
+                                          end: Alignment.topRight)),
+                                )),
                           ],
                         ),
                 );
@@ -668,22 +729,76 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 8.0),
-        child: Text(
-            widget.municipality.description != null
-                ? widget.municipality.description.toSentenceCase()
-                : AppLocalizations.of(context)
+        child: widget.municipality.description != null
+            ? countLines(widget.municipality.description)
+            : Text(
+                AppLocalizations.of(context)
                     .translate("municipality_no_description"),
-            style: Theme.of(context)
-                .textTheme
-                .bodyText1
-                .copyWith(color: AppStyles.lightGreyColor)),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyText1
+                    .copyWith(color: AppStyles.lightGreyColor)),
       ),
     );
   }
 
+  countLines(String text) {
+    return showAllDescription || text.length < 280
+        ? SizedBox(
+            child: Align(
+                alignment: Alignment.centerLeft,
+                child: RichText(
+                  textAlign: TextAlign.justify,
+                  text: TextSpan(children: [
+                    TextSpan(
+                        text: text,
+                        style: TextStyle(
+                            color: AppStyles.lightGreyColor, fontSize: 15)),
+                  ]),
+                )))
+        : RichText(
+          textAlign: TextAlign.justify,
+          //maxLines: 6,
+          text: TextSpan(children: [
+            TextSpan(
+                text: text.substring(0, int.parse(
+              "${(text.length * 0.5).toInt()}")) + "...",
+                style: TextStyle(
+                    color: AppStyles.lightGreyColor, fontSize: 15)),
+            WidgetSpan(
+              child: Container(
+                alignment: Alignment.centerRight,
+                //width: MediaQuery.of(context).size.width/4,
+                child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
+                    onTap: () {
+                      setState(() {
+                        showAllDescription = !showAllDescription;
+                      });
+                    },
+                    child: Text(
+                      " Leer más",
+                      style: TextStyle(color: Colors.black, fontSize: 15),
+                    ),),
+              ),
+            )
+          ]),
+        );
+  }
+
+  String fromRichTextToPlainText(final Widget widget) {
+    if (widget is RichText) {
+      if (widget.text is TextSpan) {
+        final buffer = StringBuffer();
+        (widget.text as TextSpan).computeToPlainText(buffer);
+        return buffer.toString();
+      }
+    }
+    return null;
+  }
+
   Future<List<Archive>> getByParams(int serviceCategoryId) async {
-    if(_position==null)
-    await _getCurrentLocation();
+    if (_position == null) await _getCurrentLocation();
 
     try {
       Map params = {
@@ -733,8 +848,7 @@ class _MunicipalityDetailsScreenState extends State<MunicipalityDetailsScreen> {
           print(_services[i].categories[j].companyNumber);
         }
       }
-      setState(() {
-      });
+      setState(() {});
     } catch (e) {
       catchErrors(e, _scaffoldKey);
     }

@@ -13,36 +13,40 @@ class CustomDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: (content != null && content != "") ? Text(content) : null,
-      actions: <Widget>[
-        if (hasCancel)
-          SimpleDialogOption(
-            child: Text(
-              AppLocalizations.of(context).translate("cancel").toUpperCase(),
-              style: TextStyle(
+    return Center(
+      child: SingleChildScrollView(
+        child: AlertDialog(
+          title: Text(title),
+          content: (content != null && content != "") ? Text(content) : null,
+          actions: <Widget>[
+            if (hasCancel)
+            SimpleDialogOption(
+              child: Text(
+                AppLocalizations.of(context).translate("cancel").toUpperCase(),
+                style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+            ),
+            SimpleDialogOption(
+              child: Text(
+                buttonText?.toUpperCase() ??
+                    AppLocalizations.of(context).translate("accept").toUpperCase(),
+                style: TextStyle(
                   color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
             ),
-            onPressed: () {
-              Navigator.pop(context, false);
-            },
-          ),
-        SimpleDialogOption(
-          child: Text(
-            buttonText?.toUpperCase() ??
-                AppLocalizations.of(context).translate("accept").toUpperCase(),
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
+          ],
         ),
-      ],
+      ),
     );
   }
 }

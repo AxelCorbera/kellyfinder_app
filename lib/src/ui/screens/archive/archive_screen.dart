@@ -42,9 +42,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   int i = 0;
 
   geo.Position _position;
+  Category subcategory;
 
   @override
   void initState() {
+    subcategory = Provider.of<CategoryNotifier>(context, listen: false)
+        .selectedSubcategory;
+    log(subcategory.parentCategory.name);
     super.initState();
 
     _futureLocation = _getLocation();
@@ -64,11 +68,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(centerTitle:true,
-          title: Text(
+          title: subcategory.parentCategory.name != 'Compartidos'
+              && subcategory.parentCategory.name != 'Busco'
+            && subcategory.parentCategory.name != 'Tengo' ?Text(
             globals.searchingType == SearchingType.DEMAND
-                ? AppLocalizations.of(context).translate("demand")
-                : AppLocalizations.of(context).translate("offer"),
-          ),
+                ? AppLocalizations.of(context).translate("employees")
+                : AppLocalizations.of(context).translate("jobs"),
+          ):Text('Oferta'),
           actions: <Widget>[
             HomeIcon(),
           ],

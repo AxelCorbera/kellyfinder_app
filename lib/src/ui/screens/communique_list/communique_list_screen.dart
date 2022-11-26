@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:app/src/api/api_provider.dart';
@@ -30,6 +31,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:share/share.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:app/src/config/string_casing_extension.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CommuniqueListScreen extends StatefulWidget {
   @override
@@ -620,6 +622,7 @@ class _CommuniqueListScreenState extends State<CommuniqueListScreen> {
         setState(() {
           _communiques.addAll(_results.communiques);
 
+          markAsRead(_communiques);
           // build list items
           for (var i = 0; i < _results.communiques.length; i++) {
             if (_results.communiques[i].date != dateAdded) {
@@ -756,5 +759,14 @@ class _CommuniqueListScreenState extends State<CommuniqueListScreen> {
       _communiques.clear();
       _listItems.clear();
     });
+  }
+
+  Future<void> markAsRead(List<Communique> communiques) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> list = [];
+    for(int i = 0;i<_communiques.length;i++){
+      list.add(_communiques[i].id.toString());
+    }
+    await prefs.setString('communiques',jsonEncode(list));
   }
 }
