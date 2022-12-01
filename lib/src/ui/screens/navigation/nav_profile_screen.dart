@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:app/src/api/api_provider.dart';
 import 'package:app/src/config/app_localizations.dart';
 import 'package:app/src/config/app_styles.dart';
@@ -21,6 +24,7 @@ class _NavProfileScreenState extends State<NavProfileScreen> {
   bool _raffleActive = false;
   String _raffleVideo;
   String _raffleCode;
+  String numLottery = '-';
 
   @override
   void initState() {
@@ -98,6 +102,24 @@ class _NavProfileScreenState extends State<NavProfileScreen> {
                                 ),
                               ],
                             ),
+                            if(numLottery!=null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Row(
+                                children: <Widget>[
+                                  Text(
+                                    'Número de loteria: ',
+                                    style: Theme.of(context).textTheme.caption,
+                                    maxLines: null,
+                                  ),
+                                  Text(
+                                    numLottery,
+                                    style: Theme.of(context).textTheme.caption,
+                                    maxLines: null,
+                                  ),
+                                ],
+                              ),
+                            ),
                             if (_raffleActive)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
@@ -142,6 +164,10 @@ class _NavProfileScreenState extends State<NavProfileScreen> {
   }
 
   Future _checkRaffle() async {
+    final response =
+    await ApiProvider().performCheckLotery(Provider.of<UserNotifier>(context, listen: false).user.id.toString());
+    var json = jsonDecode(response);
+    numLottery = json['num_loteria'];
     final result = await ApiProvider().performIsLotteryActive(
         {"user_id": Provider.of<UserNotifier>(context, listen: false).user.id});
 

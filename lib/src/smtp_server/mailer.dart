@@ -2,9 +2,10 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:mailer/smtp_server/gmail.dart';
 
-Future Mailer(String code, String email) async {
+Future Mailer(String code, String email, int mailActived,
+    String body, String footer) async {
 
-  String bodyStr = createMsg(code);
+  String bodyStr = createMsg(code, mailActived, body, footer);
   SmtpServer smtpServer = SmtpServer('smtp.ionos.es',
   port: 465,
   username: 'noreply@kellyfindermail.com',
@@ -33,12 +34,13 @@ Future Mailer(String code, String email) async {
   }
 }
 
-String createMsg(String code) {
-  return 'Bienvenido a Kelly Finder,'
-      '<br><br>Le informamos que el número que le enviamos en este correo, es con el que participará en el Sorteo de Navidad del día 22 de Dic de 2022. '
-      '<br><br>Si el número recibido es posterior al día 21-Dic-2022 a las 23:59, ya no será válido para este Sorteo de Navidad.'
-      '<br><br>Su número asignado es: $code'
-      '<br><br>Le deseamos mucha suerte.'
-      '<br><br>Un saludo,'
-      '<br>Equipo Kelly Finder.';
+String createMsg(String code, int mailActived, String body, String footer) {
+  if(mailActived == 1){
+    return '$body'
+        '<br><br>Su número asignado es: $code'
+        '$footer';
+  }else{
+    return '$body'
+        '$footer';
+  }
 }

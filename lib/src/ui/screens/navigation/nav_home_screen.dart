@@ -5,6 +5,7 @@ import 'package:app/src/api/api_provider.dart';
 import 'package:app/src/config/app_localizations.dart';
 import 'package:app/src/config/app_styles.dart';
 import 'package:app/src/model/category.dart';
+import 'package:app/src/model/lottery/get_popup_lottery.dart';
 import 'package:app/src/model/municipality/communique.dart';
 import 'package:app/src/model/municipality/municipality.dart';
 import 'package:app/src/model/user/municipal_info.dart';
@@ -12,6 +13,7 @@ import 'package:app/src/provider/category_notifier.dart';
 import 'package:app/src/provider/socket_notifier.dart';
 import 'package:app/src/smtp_server/mailer.dart';
 import 'package:app/src/ui/screens/communique_list/communique_list_screen.dart';
+import 'package:app/src/ui/screens/lottery/christmas_lottery.dart';
 import 'package:app/src/ui/widgets/button/petition_icon.dart';
 import 'package:app/src/ui/widgets/button/search_slider_button.dart';
 import 'package:app/src/ui/widgets/dialog/custom_dialog.dart';
@@ -54,10 +56,13 @@ class _NavHomeScreenState extends State<NavHomeScreen> {
 
   Future _futureCategories;
   bool newComunique = false;
+  GetPopupLottery popupLottery;
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => checkLottery());
     _futureLocation = _getLocation();
     _futureCategories = _getData();
   }
@@ -79,20 +84,23 @@ class _NavHomeScreenState extends State<NavHomeScreen> {
             child: Stack(
               alignment: Alignment.topRight,
               children: [
-                if(newComunique)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0,9,3,0),
-                  child: Container(
-                    alignment: Alignment.topRight,
-                    child: Icon(Icons.circle, color: Colors.red,),
+                if (newComunique)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 9, 3, 0),
+                    child: Container(
+                      alignment: Alignment.topRight,
+                      child: Icon(
+                        Icons.circle,
+                        color: Colors.red,
+                      ),
+                    ),
                   ),
-                ),
                 Center(
                   child: IconButton(
                     color: AppStyles.lightGreyColor,
                     icon: Icon(MaterialCommunityIcons.bullhorn),
                     onPressed: () {
-                      newComunique=false;
+                      newComunique = false;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -135,7 +143,7 @@ class _NavHomeScreenState extends State<NavHomeScreen> {
           PetitionIcon(),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody()
     );
   }
 
@@ -299,15 +307,14 @@ class _NavHomeScreenState extends State<NavHomeScreen> {
           _communiques.addAll(_results.communiques);
 
           List<dynamic> list = [];
-          for(int i = 0;i<_communiques.length;i++){
+          for (int i = 0; i < _communiques.length; i++) {
             list.add(_communiques[i].id.toString());
           }
           checkComunique(list);
-
         });
-      }else{
+      } else {
         setState(() {
-          newComunique=false;
+          newComunique = false;
           log('no hay nuevos communiques');
         });
       }
@@ -322,21 +329,44 @@ class _NavHomeScreenState extends State<NavHomeScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     final comRead = prefs.getString('communiques');
-    log(comRead.toString());
-    log(list.toString());
-    if(comRead!=null){
+    // log(comRead.toString());
+    // log(list.toString());
+    if (comRead != null) {
       List<dynamic> com = jsonDecode(comRead);
       if (const DeepCollectionEquality().equals(list, com)) {
-        newComunique=false;
+        newComunique = false;
         log('no hay nuevos communiques');
-      }else{
-        newComunique=true;
+      } else {
+        newComunique = true;
       }
-    }else{
-      newComunique=true;
+    } else {
+      newComunique = true;
     }
-    setState(() {
-
-    });
+    setState(() {});
   }
+
+  Future<void> checkLottery() async {
+    try {
+      final response =
+      await ApiProvider().performGetEmailSettings();
+      log(response);
+      popupLottery = getPopupLotteryFromJson(response);
+      log(popupLottery.text);
+    }catch (error){
+      log(error.toString());
+    }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //await prefs.setBool('lottery', true);
+    final lotteryShow = prefs.getBool('lottery');
+    DateTime dateTime = DateTime.parse(popupLottery.fechaFinalizacionPopup);
+    if(DateTime.now().isBefore(dateTime) && popupLottery.activarPopup == 1) {
+      if (lotteryShow == null || lotteryShow) {
+        Navigator.of(context).push(PageRouteBuilder(
+            opaque: false,
+            pageBuilder: (BuildContext context, _, __) =>
+            ChristmasLottery()));
+      }
+    }
+  }
+
 }

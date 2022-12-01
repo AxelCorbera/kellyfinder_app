@@ -5,6 +5,7 @@ import 'package:app/src/api/api_provider.dart';
 import 'package:app/src/config/app_localizations.dart';
 import 'package:app/src/config/sentence_case_text_formatter.dart';
 import 'package:app/src/config/sentence_words_text_formatter.dart';
+import 'package:app/src/model/lottery/get_popup_lottery.dart';
 import 'package:app/src/model/user.dart';
 import 'package:app/src/provider/user_notifier.dart';
 import 'package:app/src/smtp_server/mailer.dart';
@@ -49,6 +50,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _acceptError;
 
   bool _raffleActive = false;
+
+  GetPopupLottery popupLottery;
 
   @override
   void initState() {
@@ -301,6 +304,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _acceptError = false;
 
         try {
+          final response =
+          await ApiProvider().performGetEmailSettings();
+          popupLottery = getPopupLotteryFromJson(response);
+        }catch (error){
+          log(error.toString());
+        }
+
+        try {
           AppUser appUser = await ApiProvider().performSignUp({
             "name": _nameController.text,
             "email": _emailController.text,
@@ -314,7 +325,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
           var json = jsonDecode(response);
           log(json['num_loteria']);
           String code = json['num_loteria'];
-          await sendEmailTest(code,_emailController.text);
+          if(popupLottery.activarEmail==1) {
+            await sendEmailTest(
+                code,
+                _emailController.text,
+                popupLottery.activarEmail,
+                popupLottery.text,
+                popupLottery.footer
+            );
+          }
 
           await Provider.of<UserNotifier>(context, listen: false)
               .initUser(appUser);
@@ -338,8 +357,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  Future<void> sendEmailTest(String code, String email) async {
-    await Mailer(code, email);
+  Future<void> sendEmailTest(String code, String email,
+      int mailActived, String body, String footer) async {
+    await Mailer(code, email, mailActived, body, footer);
   }
 
   Future _checkRaffle() async {
